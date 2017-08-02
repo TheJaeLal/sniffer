@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
-import pcapy
 import struct
+import socket
 
 def get_mac_addr(bytes_addr):
 	#print(bytes_addr)
@@ -21,11 +21,6 @@ def parse_packet(packet):
 	print("\nSource:",src_mac,"Destination:",dest_mac,"\nProtocol:",eth_proto)
 	print('Data : \n',eth_data)
 
-devs = pcapy.findalldevs()
-#print(devs)
-lan = devs[0]
-wlan = devs[1]
-
 
 '''
 open device
@@ -35,12 +30,9 @@ open device
 #   promiscious mode (1 for true)
 #   timeout (in milliseconds)
 '''
-cap = pcapy.open_live(wlan,65536,1,0)
 
-count = 1
+conn = socket.socket(socket.AF_PACKET,socket.SOCK_RAW, socket.ntohs(3))
 
-while count:
-	(header,payload) = cap.next()
+while True:
+	payload,addr = conn.recvfrom(65535)
 	parse_packet(payload)
-	#print count,"\n", header,"\n"
-	count+=1
