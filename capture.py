@@ -38,6 +38,14 @@ def parse_packet(packet):
 
 	ttl,proto,src,dest = struct.unpack('!8xBB2x4s4s',packet[:20])
 
+	#Ip address in string format..
+	src_ip = get_ipv4(src)
+	dest_ip = get_ipv4(dest)
+
+	#Reverse dns lookup..
+	src_web = rev_dnslookup(src_ip)
+	dest_web = rev_dnslookup(dest_ip)
+
 	if proto == 1:
 		transport_proto = 'ICMP'
 	elif proto == 6:
@@ -48,24 +56,27 @@ def parse_packet(packet):
 		transport_proto = 'Unknown Protocol Field = '+str(proto)
 
 	print('---------IP Packet---------')
-	print("Source_IP:",get_ipv4(src),"\tDestination_IP:",get_ipv4(dest),"\nTTL:",ttl,'hops\t','\tTransport_Protocol:',transport_proto)
-	
+	print("Source_IP:",src_ip,"\tDestination_IP:",dest_ip,"\nTTL:",ttl,'hops\t','\tTransport_Protocol:',transport_proto)
 	return packet[ip_header_length:]
 
 def get_ipv4(addr):
 	return '.'.join(map(str,addr))
-'''
-open device
-# Arguments here are:
-#   device
-#   snaplen (maximum number of bytes to capture _per_packet_)
-#   promiscious mode (1 for true)
-#   timeout (in milliseconds)
-'''
 
+#ip_addr is a string of type: '216.58.199.131'
+def rev_dnslookup(ip_addr):
+	#Ignore if a private Ip
+	#Use an api/send request using requests module to fetch the domain name/website name
+	#return domain name as a string or 'private_ip' if a private ip
+	pass
+
+
+#*******Main************
+
+#Make the socket connection
 conn = socket.socket(socket.AF_PACKET,socket.SOCK_RAW, socket.ntohs(3))
 
 while True:
+	#Receive the ethernet frame
 	payload,addr = conn.recvfrom(65535)
 	ip_packet = parse_frame(payload)
 	ip_data = parse_packet(ip_packet)
