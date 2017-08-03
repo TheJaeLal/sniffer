@@ -16,19 +16,28 @@ def parse_frame(frame):
 	eth_len = 14
 	eth_header = frame[:eth_len]
 	eth_data = frame[eth_len:]
-	dest_mac,src_mac,proto_field = struct.unpack('!6s6s2s' , eth_header)	
+	dest_mac,src_mac,proto_field1,proto_field2 = struct.unpack('!6s6scc' , eth_header)	
 	dest_mac = get_mac_addr(dest_mac)
 	src_mac = get_mac_addr(src_mac)
+
 	# proto is of the form b'\x08\x00'
-	proto = ''.join(map(str,proto_field))
+	#print(proto_field1+proto_field2)
+	proto1 = ''.join(map(str,proto_field1))
+	proto2 = ''.join(map(str,proto_field2))
+	proto = proto1+proto2
+	#print(proto)
 	if proto == '80':
-		ip_proto = 'IPV4'
+		ip_proto = 'IPv4'
+	elif proto == '86':
+		ip_proto = 'ARP'
+	elif proto == '86DD':
+		ip_proto = 'IPv6' 
 	else:
-		ip_proto = proto 
+		ip_proto = proto
 	print('\n\n*********Ethernet Frame*********')
 	print("Source_MAC:",src_mac,"\tDestination_MAC:",dest_mac,
 		  "\nInternet Protocol:",ip_proto)
-	return eth_data
+	return eth_data,ip_proto
 
 
 def parse_packet(packet):
@@ -125,11 +134,13 @@ def parse_TCP(data):
 	flag_psh = (offset_flags & 8) >> 3
 	flag_rst = (offset_flags & 4) >> 2
 	flag_syn = (offset_flags & 2) >> 1
-	flag_fin = (offset_flags & 1)
+	flag_fin = offset_flags & 1
 
 	print('---------TCP Packet---------')
 	print("Source_Port:",src_port,"\tDestination_Port:",dest_port,
 		  "\nHeader_Length:",tcp_header_length)
+	print("Sequence:",seq)
+	print("Acknowledgement:",ack)
 	print("Flags: URG ACK PSH RST SYN FIN")
 	print("      {:3}".format(flag_urg),"{:3}".format(flag_ack),"{:3}".format(flag_psh),
 				"{:3}".format(flag_rst),"{:3}".format(flag_syn),"{:3}".format(flag_fin))
@@ -162,6 +173,7 @@ conn = socket.socket(socket.AF_PACKET,socket.SOCK_RAW, socket.ntohs(3))
 while True:
 	#Receive the ethernet frame
 	payload,addr = conn.recvfrom(65535)
-	ip_packet = parse_frame(payload)
-	transport_packet,transport_proto = parse_packet(ip_packet)
-	application_packet = parse_transport_packet(transport_packet,transport_proto)
+	ip_packet,ip_protocol = parse_frame(payload)
+	if ip_protocol == 'IPv4':
+		transport_packet,transport_proto = parse_packet(ip_packet)
+		application_packet = parse_transport_packet(transport_packet,transport_proto)
