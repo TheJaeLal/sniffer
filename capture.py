@@ -8,6 +8,9 @@ def get_mac_addr(bytes_addr):
 	bytes_str = map("{:02x}".format, bytes_addr)
 	return ':'.join(bytes_str).upper()
 
+def get_ipv4(addr):
+	return '.'.join(map(str,addr))
+
 #Ethernet frame
 def parse_frame(frame):
 	eth_len = 14
@@ -57,10 +60,29 @@ def parse_packet(packet):
 
 	print('---------IP Packet---------')
 	print("Source_IP:",src_ip,"\tDestination_IP:",dest_ip,"\nTTL:",ttl,'hops\t','\tTransport_Protocol:',transport_proto)
-	return packet[ip_header_length:]
+	return packet[ip_header_length:],transport_proto
 
-def get_ipv4(addr):
-	return '.'.join(map(str,addr))
+def parse_ICMP(data):
+	pass
+
+def parse_UDP(data):
+	source_port,dest_port,packet_length = struct.unpack('!HHH',data[:6])
+	print('---------UDP Packet---------')
+	print("Source_Port:",source_port,"\tDestination_Port:",dest_port,"\nPacket_Length:",packet_length)
+	return data[8:]
+
+def parse_TCP(data):
+	pass
+
+def parse_transport_packet(data,protocol):
+	if protocol == 'TCP':
+		application_packet = parse_TCP(data)
+	elif protocol == 'UDP':
+		application_packet = parse_UDP(data)
+	else:
+		pass
+	return application_packet
+	
 
 #ip_addr is a string of type: '216.58.199.131'
 def rev_dnslookup(ip_addr):
@@ -79,5 +101,6 @@ while True:
 	#Receive the ethernet frame
 	payload,addr = conn.recvfrom(65535)
 	ip_packet = parse_frame(payload)
-	ip_data = parse_packet(ip_packet)
+	transport_packet,transport_proto = parse_packet(ip_packet)
+	application_packet = parse_transport_packet(transport_packet,transport_proto)
 
