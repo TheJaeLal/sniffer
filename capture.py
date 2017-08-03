@@ -2,6 +2,7 @@
 
 import struct
 import socket
+import requests
 
 def get_mac_addr(bytes_addr):
 	#print(bytes_addr)
@@ -157,12 +158,32 @@ def parse_transport_packet(data,protocol):
 	return application_packet
 	
 
-#ip_addr is a string of type: '216.58.199.131'
 def rev_dnslookup(ip_addr):
-	#Ignore if a private Ip
-	#Use an api/send request using requests module to fetch the domain name/website name
+
 	#return domain name as a string or 'private_ip' if a private ip
-	pass
+	ip_classes = []
+	for x in ip_addr.split('.'):
+		ip_classes.append(int(x))
+
+	#Ignore if a private Ip
+	if((ip_classes[0] == 10 and (0 <= ip_classes[1]+ip_classes[2]+ip_classes[3] <= 766)) or
+		(ip_classes[0] == 172 and (16 <= ip_classes[1] <= 31) and (0 <= ip_classes[2]+ip_classes[3] <= 510)) or
+		(ip_classes[0] == 192 and ip_classes[1] == 168 and (0 <= ip_classes[2]+ip_classes[3] <= 510))):
+			print('Private IP Address: '+ip_addr)
+	else:
+		try:
+			rdns_data = socket.gethostbyaddr(ip_addr)
+			print("Domain Name: "+rdns_data[0])
+			print("Host IP: "+rdns_data[2][0])
+		except socket.error:
+			print("Domain Name not found.")
+
+		# Reverse DNS Api call using requests module to fetch the domain name/website name
+		# url = "https://api.viewdns.info/reverseip/?host="+ip_addr+"&apikey=5dd53a2f62db0efec48f8a412199727316ed8684&output=json"
+		# response = requests.get(url)
+		# rdns_json = json.loads(response)
+		# print("Host IP: "+rdns_json['host'])
+		# print("Domain Name: "+rdns_json['domains'][-1]['name'])
 
 
 #*******Main************
