@@ -187,14 +187,17 @@ def rev_dnslookup(ip_addr):
 
 
 #*******Main************
+def main():
+	#Make the socket connection
+	conn = socket.socket(socket.AF_PACKET,socket.SOCK_RAW, socket.ntohs(3))
 
-#Make the socket connection
-conn = socket.socket(socket.AF_PACKET,socket.SOCK_RAW, socket.ntohs(3))
+	while True:
+		#Receive the ethernet frame
+		payload,addr = conn.recvfrom(65535)
+		ip_packet,ip_protocol = parse_frame(payload)
+		if ip_protocol == 'IPv4':
+			transport_packet,transport_proto = parse_packet(ip_packet)
+			application_packet = parse_transport_packet(transport_packet,transport_proto)
 
-while True:
-	#Receive the ethernet frame
-	payload,addr = conn.recvfrom(65535)
-	ip_packet,ip_protocol = parse_frame(payload)
-	if ip_protocol == 'IPv4':
-		transport_packet,transport_proto = parse_packet(ip_packet)
-		application_packet = parse_transport_packet(transport_packet,transport_proto)
+if __name__==__main__:
+	main()
