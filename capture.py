@@ -75,7 +75,7 @@ def parse_packet(packet):
 	return packet[ip_header_length:],transport_proto
 
 def parse_ICMP(data):
-	field_type = sturct.unpack('!B')
+	field_type = struct.unpack('!B')
 	if field_type == 0:
 		ICMP_type = 'Echo Reply'
 	elif field_type ==3:
@@ -199,5 +199,5 @@ def main():
 			transport_packet,transport_proto = parse_packet(ip_packet)
 			application_packet = parse_transport_packet(transport_packet,transport_proto)
 
-if __name__==__main__:
+if __name__=="__main__":
 	main()
